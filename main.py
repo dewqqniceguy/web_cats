@@ -252,11 +252,11 @@ def add_product():
         product.content = form.content.data
         product.price = form.price.data
         product.quantity = form.quantity.data
-        product.wtype = form.wtype.data
-        product.weaponry = form.weaponry.data
-        product.building_material = form.building_material.data
-        product.tool = form.tool.data
-        product.used = form.used.data
+        product.breed = form.breed.data
+        product.color = form.color.data
+        product.age_months = form.age_months.data
+        product.gender = form.gender.data
+        product.vaccinated = form.vaccinated.data
         product.user_id = current_user.id
         if form.image.data:
             image = form.image.data
@@ -334,11 +334,11 @@ def edit_product(id):
             form.content.data = product.content
             form.price.data = product.price
             form.quantity.data = product.quantity
-            form.wtype.data = product.wtype
-            form.weaponry.data = product.weaponry
-            form.building_material.data = product.building_material
-            form.tool.data = product.tool
-            form.used.data = product.used
+            form.breed.data = product.breed
+            form.color.data = product.color
+            form.age_months.data = product.age_months
+            form.gender.data = product.gender
+            form.vaccinated.data = product.vaccinated
         else:
             abort(404)
     if form.validate_on_submit():
@@ -351,11 +351,11 @@ def edit_product(id):
             product.content = form.content.data
             product.price = form.price.data
             product.quantity = form.quantity.data
-            product.wtype = form.wtype.data
-            product.weaponry = form.weaponry.data
-            product.building_material = form.building_material.data
-            product.tool = form.tool.data
-            product.used = form.used.data
+            product.breed = form.breed.data
+            product.color = form.color.data
+            product.age_months = form.age_months.data
+            product.gender = form.gender.data
+            product.vaccinated = form.vaccinated.data
             db_sess.commit()
             return redirect('/')
         else:
