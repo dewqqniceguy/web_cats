@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Блокировка пользователя</h1>
+<div class="col-md-6 border rounded p-4">
+    <h2>Пользователь: {{ user.name }}</h2>
+    <form action="" method="post" novalidate>
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+            <strong>Email:</strong> {{ user.email }}
+        </div>
+        <div class="alert alert-warning">
+            Чтобы подтвердить бан, введите код: <strong>123ban</strong>
+        </div>
+        <p>
+            {{ form.password_for_ban.label }}<br>
+            {{ form.password_for_ban(class="form-control") }}
+            {% for error in form.password_for_ban.errors %}
+                <small class="text-danger">{{ error }}</small>
+            {% endfor %}
+        </p>
+        <p>
+            {{ form.reason.label }}<br>
+            {{ form.reason(class="form-control") }}
+            {% for error in form.reason.errors %}
+                <small class="text-danger">{{ error }}</small>
+            {% endfor %}
+        </p>
+        <p>{{ form.submit(class="btn btn-danger") }}</p>
+        {% if message %}
+            <div class="alert alert-danger">{{ message }}</div>
+        {% endif %}
+    </form>
+</div>
+{% endblock %}

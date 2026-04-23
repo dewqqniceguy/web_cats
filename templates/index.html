@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="mb-4">Наши пушистые друзья</h1>
+<div class="row">
+    {% for item in product %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            {% if item.image_path %}
+                <img src="{{ url_for('static', filename=item.image_path) }}" class="card-img-top" alt="{{ item.title }}" style="height: 200px; object-fit: cover;">
+            {% else %}
+                <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">Нет фото</div>
+            {% endif %}
+            <div class="card-body">
+                <h5 class="card-title">{{ item.title }}</h5>
+                <h6 class="card-subtitle mb-2 text-muted">{{ item.breed }}</h6>
+                <p class="card-text text-truncate">{{ item.content }}</p>
+                <ul class="list-unstyled small">
+                    <li><strong>Пол:</strong> {{ 'Мальчик ♂' if item.gender == 'boy' else 'Девочка ♀' }}</li>
+                    <li><strong>Возраст:</strong> {{ item.age_months }} мес.</li>
+                    <li><strong>Окрас:</strong> {{ item.color }}</li>
+                    <li><strong>Прививки:</strong> {{ '✅ Есть' if item.vaccinated else '❌ Нет' }}</li>
+                </ul>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <span class="h5 mb-0 text-primary">{{ item.price }} ₽</span>
+                    <small class="text-muted">⭐ {{ item.rating }}</small>
+                </div>
+            </div>
+            <div class="card-footer bg-white border-top-0">
+                {% if item.quantity != 0 and current_user.id != item.user_id %}
+                    <a href="/purchase/{{ item.id }}" class="btn btn-block btn-success">В корзину</a>
+                {% endif %}
+                <a href="/comments/{{ item.id }}" class="btn btn-block btn-outline-secondary btn-sm">Отзывы</a>
+
+                {% if current_user.role == "a" or current_user.id == item.user_id %}
+                    <div class="mt-2 d-flex justify-content-between">
+                        <a href="/products/{{ item.id }}" class="btn btn-sm btn-link">Редактировать</a>
+                        <a href="/products_delete/{{ item.id }}" class="btn btn-sm text-danger">Удалить</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Админ-панель</h1>
+<div class="row">
+    {% for item in users %}
+        <div class="col-md-6 border rounded p-3 mb-2">
+            <h2>{{ item.name }}</h2>
+            <div>
+                <strong>ID:</strong> {{ item.id }} |
+                <strong>Email:</strong> {{ item.email }} |
+                <strong>Возраст:</strong> {{ item.age }}
+            </div>
+            {% if current_user.role == "a" and item.id != current_user.id %}
+                <a href="/ban/{{ item.id }}" class="btn btn-danger mt-2">Забанить</a>
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

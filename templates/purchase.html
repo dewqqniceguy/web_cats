@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="col-md-6 offset-md-3">
+    <h1>Покупка товара</h1>
+    <div class="card mb-3 p-3">
+        <h4>{{ product.title }}</h4>
+        <p>Цена: <strong>{{ product.price }} ₽</strong></p>
+        <p>Доступно: {{ product.quantity }} шт.</p>
+    </div>
+
+    <form action="" method="post">
+        {{ form.hidden_tag() }}
+        <div class="form-group">
+            {{ form.quantity.label }}
+            {{ form.quantity(class="form-control", type="number") }}
+            {% for error in form.quantity.errors %}
+                <div class="alert alert-danger mt-2">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <p>{{ form.submit(class="btn btn-primary w-100") }}</p>
+
+        {% if message %}
+            <div class="alert alert-success">{{ message }}</div>
+        {% endif %}
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+          crossorigin="anonymous">
+    <title>{{title}} | Мяу-Маркет</title>
+</head>
+<body>
+<header>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="/">🐾 Мяу-Маркет</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav mr-auto">
+                {% if current_user.is_authenticated %}
+                <li class="nav-item">
+                    <a class="nav-link" href="/balance">💰 Баланс: {{current_user.balance}} ₽</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/basket">🛒 Корзина</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/products">➕ Добавить котика</a>
+                </li>
+                {% endif %}
+            </ul>
+            <div class="navbar-nav">
+                {% if current_user.is_authenticated %}
+                    <a class="nav-link" href="/profile">{{ current_user.name }}</a>
+                    <a class="nav-link text-danger" href="/logout">Выйти</a>
+                {% else %}
+                    <a class="btn btn-outline-primary mr-2" href="/register">Регистрация</a>
+                    <a class="btn btn-primary" href="/login">Войти</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+</header>
+<main role="main" class="container mt-4">
+    {% block content %}{% endblock %}
+</main>
+</body>
+</html>

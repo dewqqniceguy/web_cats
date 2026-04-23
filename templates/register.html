@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="col-md-6 offset-md-3">
+    <h1>Регистрация</h1>
+    <form action="" method="post" class="mt-4">
+        {{ form.hidden_tag() }}
+
+        <div class="form-group">
+            {{ form.email.label }}<br>
+            {{ form.email(class="form-control", type="email") }}
+            {% for error in form.email.errors %}
+                <small class="text-danger">{{ error }}</small>
+            {% endfor %}
+        </div>
+
+        <div class="form-group">
+            {{ form.password.label }}<br>
+            {{ form.password(class="form-control", type="password") }}
+            {% for error in form.password.errors %}
+                <small class="text-danger">{{ error }}</small>
+            {% endfor %}
+        </div>
+
+        <div class="form-group">
+            {{ form.password_again.label }}<br>
+            {{ form.password_again(class="form-control", type="password") }}
+            {% for error in form.password_again.errors %}
+                <small class="text-danger">{{ error }}</small>
+            {% endfor %}
+        </div>
+
+        <div class="form-group">
+            {{ form.name.label }}<br>
+            {{ form.name(class="form-control") }}
+        </div>
+
+        <div class="form-row">
+            <div class="form-group col-md-8">
+                {{ form.city.label }}
+                {{ form.city(class="form-control") }}
+            </div>
+            <div class="form-group col-md-4">
+                {{ form.age.label }}
+                {{ form.age(class="form-control", type="number") }}
+            </div>
+        </div>
+
+        <p>{{ form.submit(class="btn btn-primary w-100") }}</p>
+    </form>
+</div>
+{% endblock %}

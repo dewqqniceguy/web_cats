@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="col-md-4 offset-md-4 shadow-sm p-4 border rounded">
+    <h3>Изменить количество</h3>
+    <form action="" method="post">
+        {{ form.hidden_tag() }}
+        <div class="form-group mt-3">
+            {{ form.quantity.label }}
+            {{ form.quantity(class="form-control") }}
+            {% for error in form.quantity.errors %}
+                <div class="alert alert-danger mt-2 small">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <p>{{ form.submit(class="btn btn-primary w-100") }}</p>
+    </form>
+</div>
+{% endblock %}
