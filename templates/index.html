@@ -6,11 +6,12 @@
     {% for item in product %}
     <div class="col-md-4 mb-4">
         <div class="card h-100 shadow-sm">
-            {% if item.image_path %}
-                <img src="{{ url_for('static', filename=item.image_path) }}" class="card-img-top" alt="{{ item.title }}" style="height: 200px; object-fit: cover;">
-            {% else %}
-                <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">Нет фото</div>
-            {% endif %}
+<!--            {% if item.image_path %}-->
+<!--                <img src="{{ url_for('static', filename=item.image_path) }}" class="card-img-top" alt="{{ item.title }}" style="height: 200px; object-fit: cover;">-->
+<!--            {% else %}-->
+<!--                <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">Нет фото</div>-->
+<!--            {% endif %}-->
+            <img src="data:image/jpeg;base64, {{ item.image_data }}" alt="Долнжна быть картинка">
             <div class="card-body">
                 <h5 class="card-title">{{ item.title }}</h5>
                 <h6 class="card-subtitle mb-2 text-muted">{{ item.breed }}</h6>

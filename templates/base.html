@@ -17,13 +17,13 @@
             <ul class="navbar-nav mr-auto">
                 {% if current_user.is_authenticated %}
                 <li class="nav-item">
-                    <a class="nav-link" href="/balance">💰 Баланс: {{current_user.balance}} ₽</a>
+                    <a class="nav-link" href="/balance">Баланс: {{current_user.balance}} ₽</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/basket">🛒 Корзина</a>
+                    <a class="nav-link" href="/basket">Корзина</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/products">➕ Добавить котика</a>
+                    <a class="nav-link" href="/products">Добавить котика</a>
                 </li>
                 {% endif %}
             </ul>

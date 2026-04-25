@@ -23,6 +23,7 @@ class Product(SqlAlchemyBase):
 
     user_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("users.id"))
     image_path = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+    image_data = sqlalchemy.Column(sqlalchemy.BLOB)
 
     user = orm.relationship('User', back_populates='product')
     comments = orm.relationship('Comment', back_populates='product')

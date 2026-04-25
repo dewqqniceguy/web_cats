@@ -21,7 +21,7 @@ from forms.login import LoginForm
 from forms.products import ProductForm
 from forms.quantity import QuantityForm
 from forms.user import RegisterForm
-
+import base64
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 login_manager = LoginManager()
@@ -48,9 +48,13 @@ def main():
 def index():
     db_sess = db_session.create_session()
     product = db_sess.query(Product)
+    lis = []
+    for i in product:
+        i.image_data = base64.b64encode(i.image_data).decode("utf-8")
+        lis.append(i)
     if "AnonymousUserMixin" not in str(current_user):
-        return render_template("index.html", product=product, url="/profile", name_b=current_user.name)
-    return render_template("index.html", product=product)
+        return render_template("index.html", product=lis, url="/profile", name_b=current_user.name)
+    return render_template("index.html", product=lis)
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -258,13 +262,15 @@ def add_product():
         product.gender = form.gender.data
         product.vaccinated = form.vaccinated.data
         product.user_id = current_user.id
+        # if form.image.data:
+        #     image = form.image.data
+        #     if image and allowed_file(image.filename):
+        #         filename = secure_filename(image.filename)
+        #         filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+        #         image.save(filepath)
+        #         product.image_path = 'images/' + filename
         if form.image.data:
-            image = form.image.data
-            if image and allowed_file(image.filename):
-                filename = secure_filename(image.filename)
-                filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-                image.save(filepath)
-                product.image_path = 'images/' + filename
+            product.image_data = form.image.data.read()
         db_sess.add(product)
         db_sess.commit()
         return redirect('/profile')
@@ -356,6 +362,8 @@ def edit_product(id):
             product.age_months = form.age_months.data
             product.gender = form.gender.data
             product.vaccinated = form.vaccinated.data
+            if form.image.data:
+                product.image_data = form.image.data.read()
             db_sess.commit()
             return redirect('/')
         else:
