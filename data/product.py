@@ -12,7 +12,7 @@ class Product(SqlAlchemyBase):
     content = sqlalchemy.Column(sqlalchemy.String, nullable=True)  # описание характера
     price = sqlalchemy.Column(sqlalchemy.Float, nullable=False)
     rating = sqlalchemy.Column(sqlalchemy.Float, default=0.00)
-    quantity = sqlalchemy.Column(sqlalchemy.Integer)  # количество (если продают сразу выводок)
+    #quantity = sqlalchemy.Column(sqlalchemy.Integer)
 
     # новые поля для Мяу-Маркета
     breed = sqlalchemy.Column(sqlalchemy.String, nullable=True)  # порода

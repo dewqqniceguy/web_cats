@@ -1,69 +1,57 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8 shadow p-4 bg-white rounded">
-        <h1>{{ 'Добавить котика' if 'products/' not in request.path else 'Редактировать анкету' }}</h1>
-        <form action="" method="post" enctype="multipart/form-data" class="mt-4">
-            {{ form.hidden_tag() }}
+<h1>{{ title }}</h1>
+<form method="POST" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
 
-            <div class="row">
-                <div class="col-md-6 form-group">
-                    {{ form.title.label }}
-                    {{ form.title(class="form-control", placeholder="Как зовут котика?") }}
-                    {% for error in form.title.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                </div>
-                <div class="col-md-6 form-group">
-                    {{ form.breed.label }}
-                    {{ form.breed(class="form-control", placeholder="Например: Мейн-кун") }}
-                </div>
-            </div>
-
-            <div class="form-group">
-                {{ form.content.label }}
-                {{ form.content(class="form-control", rows="3") }}
-            </div>
-
-            <div class="row">
-                <div class="col-md-4 form-group">
-                    {{ form.price.label }}
-                    {{ form.price(class="form-control", type="number") }}
-                </div>
-                <div class="col-md-4 form-group">
-                    {{ form.age_months.label }}
-                    {{ form.age_months(class="form-control", type="number") }}
-                </div>
-                <div class="col-md-4 form-group">
-                    {{ form.quantity.label }}
-                    {{ form.quantity(class="form-control", type="number") }}
-                </div>
-            </div>
-
-            <div class="row align-items-center">
-                <div class="col-md-4 form-group">
-                    {{ form.gender.label }}
-                    {{ form.gender(class="form-control") }}
-                </div>
-                <div class="col-md-4 form-group">
-                    {{ form.color.label }}
-                    {{ form.color(class="form-control") }}
-                </div>
-                <div class="col-md-4 form-check pt-3 pl-5">
-                    {{ form.vaccinated(class="form-check-input") }}
-                    {{ form.vaccinated.label(class="form-check-label") }}
-                </div>
-            </div>
-
-            <div class="form-group mt-3">
-                {{ form.image.label }}
-                {{ form.image(class="form-control-file") }}
-            </div>
-
-            <div class="mt-4">
-                {{ form.submit(class="btn btn-primary btn-lg") }}
-                <a href="/" class="btn btn-link">Отмена</a>
-            </div>
-        </form>
+    <div class="form-group">
+        {{ form.title.label(class="form-control-label") }}
+        {{ form.title(class="form-control") }}
     </div>
-</div>
+
+    <div class="form-group">
+        {{ form.content.label(class="form-control-label") }}
+        {{ form.content(class="form-control") }}
+    </div>
+
+    <div class="form-group">
+        {{ form.price.label(class="form-control-label") }}
+        {{ form.price(class="form-control") }}
+    </div>
+
+    <!-- ПОЛЕ QUANTITY УДАЛЕНО -->
+
+    <div class="form-group">
+        {{ form.breed.label(class="form-control-label") }}
+        {{ form.breed(class="form-control") }}
+    </div>
+
+    <div class="form-group">
+        {{ form.color.label(class="form-control-label") }}
+        {{ form.color(class="form-control") }}
+    </div>
+
+    <div class="form-group">
+        {{ form.age_months.label(class="form-control-label") }}
+        {{ form.age_months(class="form-control") }}
+    </div>
+
+    <div class="form-group">
+        {{ form.gender.label(class="form-control-label") }}
+        {{ form.gender(class="form-control") }}
+    </div>
+
+    <div class="form-group form-check">
+        {{ form.vaccinated(class="form-check-input") }}
+        {{ form.vaccinated.label(class="form-check-label") }}
+    </div>
+
+    <div class="form-group">
+        {{ form.image.label(class="form-control-label") }}
+        {{ form.image(class="form-control") }}
+    </div>
+
+    <button type="submit" class="btn btn-primary">Сохранить</button>
+</form>
 {% endblock %}

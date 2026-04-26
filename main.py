@@ -102,22 +102,26 @@ def purchase(id):
     if not basket:
         basket = Basket()
         basket.user_id = current_user.id
+        db_sess.add(basket)
+        db_sess.commit()
+
+    # Проверяем, есть ли уже этот товар в корзине
     b_item = db_sess.query(BasketItem).filter(BasketItem.product_id == id).first()
     product = db_sess.query(Product).filter(Product.id == id).first()
+
     if product:
+        # Если товара ещё нет в корзине - добавляем
         if not b_item:
             b_item = BasketItem()
             b_item.product_id = id
             b_item.basket_id = basket.id
-            basket.basket_items.append(b_item)
-            product.quantity -= 1
-            db_sess.merge(basket)
+            b_item.quantity = 1  # Всегда 1 кот
+            db_sess.add(b_item)
             db_sess.commit()
+        # Если уже есть - не добавляем повторно (или можно добавить, но я запрещаю)
         else:
-            b_item.quantity += 1
-            db_sess.merge(b_item)
-            product.quantity -= 1
-            db_sess.commit()
+            # Товар уже в корзине, ничего не делаем
+            pass
     else:
         abort(404)
     return redirect("/")
@@ -182,28 +186,28 @@ def basket():
         return render_template("basket.html", basket=basket)
 
 
-@app.route("/quantity/<int:item_id>", methods=['GET', 'POST'])
-@login_required
-def quantity(item_id):
-    form = QuantityForm()
-    db_sess = db_session.create_session()
-    basket_item = db_sess.query(BasketItem).filter(BasketItem.product_id == item_id).first()
-    product = db_sess.query(Product).filter(basket_item.product_id == Product.id).first()
-    if basket_item:
-        if form.validate_on_submit():
-            if form.quantity.data > product.quantity:
-                basket_item.quantity = product.quantity
-            elif form.quantity.data <= 0:
-                basket_item.quantity = 1
-            else:
-                basket_item.quantity = form.quantity.data
-            product.quantity -= basket_item.qantity
-            db_sess.merge(basket_item)
-            db_sess.commit()
-            return redirect("/basket")
-    else:
-        abort(404)
-    return render_template("quantity.html", form=form)
+#@app.route("/quantity/<int:item_id>", methods=['GET', 'POST'])
+#@login_required
+#def quantity(item_id):
+#    form = QuantityForm()
+#    db_sess = db_session.create_session()
+#    basket_item = db_sess.query(BasketItem).filter(BasketItem.product_id == item_id).first()
+#    product = db_sess.query(Product).filter(basket_item.product_id == Product.id).first()
+#    if basket_item:
+#        if form.validate_on_submit():
+#            if form.quantity.data > product.quantity:
+#                basket_item.quantity = product.quantity
+#            elif form.quantity.data <= 0:
+#                basket_item.quantity = 1
+#            else:
+#                basket_item.quantity = form.quantity.data
+#            product.quantity -= basket_item.qantity
+#            db_sess.merge(basket_item)
+#            db_sess.commit()
+#            return redirect("/basket")
+#    else:
+#        abort(404)
+#    return render_template("quantity.html", form=form)
 
 
 @app.route("/buy", methods=['GET', 'POST'])
@@ -211,23 +215,34 @@ def quantity(item_id):
 def buy():
     db_sess = db_session.create_session()
     basket = db_sess.query(Basket).filter(Basket.user == current_user).first()
-    basket_item = db_sess.query(BasketItem).filter(basket.user == current_user).all()
-    if basket_item:
-        for i in basket_item:
-            product = db_sess.query(Product).filter(i.product_id == Product.id).first()
-            if i.quantity * product.price <= current_user.balance:
-                user = db_sess.query(User).filter(product.user_id == User.id).first()
-                current_user.balance -= i.quantity * product.price
-                user.balance += i.quantity * product.price
-                db_sess.merge(user)
-            else:
-                return redirect("/balance")
-        for j in basket_item:
-            db_sess.delete(j)
-        db_sess.merge(current_user)
+    if not basket:
+        return redirect("/")
+
+    basket_items = db_sess.query(BasketItem).filter(BasketItem.basket_id == basket.id).all()
+
+    if basket_items:
+        for item in basket_items:
+            product = db_sess.query(Product).filter(Product.id == item.product_id).first()
+            if product:
+                # Проверяем баланс (цена * количество, но количество всегда 1)
+                if product.price <= current_user.balance:
+                    # Переводим деньги продавцу
+                    seller = db_sess.query(User).filter(User.id == product.user_id).first()
+                    current_user.balance -= product.price
+                    seller.balance += product.price
+
+                    # Удаляем товар (кот продан)
+                    db_sess.delete(product)
+                    db_sess.commit()
+                else:
+                    return redirect("/balance")
+
+        # Очищаем корзину
+        for item in basket_items:
+            db_sess.delete(item)
         db_sess.delete(basket)
         db_sess.commit()
-        return redirect("/")
+
     return redirect("/")
 
 
@@ -255,7 +270,8 @@ def add_product():
         product.title = form.title.data
         product.content = form.content.data
         product.price = form.price.data
-        product.quantity = form.quantity.data
+        product.quantity = 1
+        #product.quantity = form.quantity.data
         product.breed = form.breed.data
         product.color = form.color.data
         product.age_months = form.age_months.data
@@ -339,7 +355,7 @@ def edit_product(id):
             form.title.data = product.title
             form.content.data = product.content
             form.price.data = product.price
-            form.quantity.data = product.quantity
+            #form.quantity.data = product.quantity
             form.breed.data = product.breed
             form.color.data = product.color
             form.age_months.data = product.age_months
@@ -356,7 +372,7 @@ def edit_product(id):
             product.title = form.title.data
             product.content = form.content.data
             product.price = form.price.data
-            product.quantity = form.quantity.data
+            #product.quantity = form.quantity.data
             product.breed = form.breed.data
             product.color = form.color.data
             product.age_months = form.age_months.data

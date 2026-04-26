@@ -10,7 +10,7 @@ class ProductForm(FlaskForm):
     title = StringField('Имя котика / Заголовок', validators=[DataRequired()])
     content = TextAreaField("Описание (характер, привычки)")
     price = FloatField("Цена в ₽", validators=[DataRequired()])
-    quantity = IntegerField("Количество", validators=[DataRequired()])
+    #quantity = IntegerField("Количество", validators=[DataRequired()])
 
     # Характеристики котика
     breed = StringField('Порода (или "Беспородный")', validators=[DataRequired()])

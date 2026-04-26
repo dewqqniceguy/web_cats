@@ -7,7 +7,7 @@ from data.users import User
 def create_admin_user():
     user = User()
     user.name = "Админ"
-    user.email = "admin@www.com"
+    user.email = "admin@cat.com"
     user.hashed_password = generate_password_hash("12345")
     user.age = 52
     user.city = "Канаш"
