@@ -11,7 +11,7 @@ def create_admin_user():
     user.hashed_password = generate_password_hash("12345")
     user.age = 52
     user.city = "Канаш"
-    user.role = "w"
+    user.role = "a"
     user.balance = 10000000
     db_sess = db_session.create_session()
     db_sess.add(user)

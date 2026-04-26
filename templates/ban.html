@@ -9,16 +9,6 @@
         <div class="mb-3">
             <strong>Email:</strong> {{ user.email }}
         </div>
-        <div class="alert alert-warning">
-            Чтобы подтвердить бан, введите код: <strong>123ban</strong>
-        </div>
-        <p>
-            {{ form.password_for_ban.label }}<br>
-            {{ form.password_for_ban(class="form-control") }}
-            {% for error in form.password_for_ban.errors %}
-                <small class="text-danger">{{ error }}</small>
-            {% endfor %}
-        </p>
         <p>
             {{ form.reason.label }}<br>
             {{ form.reason(class="form-control") }}

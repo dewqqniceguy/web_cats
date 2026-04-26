@@ -134,25 +134,30 @@ def ban(item_id):
         form = BanForm()
         db_sess = db_session.create_session()
         user = db_sess.query(User).filter(User.id == item_id).first()
-        if user and user != current_user and current_user.role == "a":
+        if user and user != current_user:
             if form.validate_on_submit():
-                print(form.password_for_ban.data)
                 if form.password_for_ban.data != "123ban":
                     return render_template('ban.html', title='Забанить пользователя',
                                            form=form,
                                            message="Вы ввели код неправильно")
                 else:
-                    ban = BannedEmail()
-                    ban.email = user.email
-                    ban.reason = form.reason.data
+                    ban_record = BannedEmail()
+                    ban_record.email = user.email
+                    ban_record.reason = form.reason.data
+
+                    # Удаляем все товары пользователя, чтобы не сломать ленту
+                    db_sess.query(Product).filter(Product.user_id == user.id).delete()
+                    # Если нужно, здесь же можно удалить комментарии пользователя
+                    db_sess.query(Comment).filter(Comment.user_id == user.id).delete()
+
                     db_sess.delete(user)
-                    db_sess.add(ban)
+                    db_sess.add(ban_record)
                     db_sess.commit()
-                    return redirect("/")
+                    return redirect("/admin")  # Лучше редиректить обратно в админку
         else:
             abort(404)
         return render_template('ban.html', user=user, form=form, title="Забанить пользователя", url="/",
-                               name_b="Вернутся на главную")
+                               name_b="Вернуться на главную")
     else:
         abort(404)
 
@@ -346,33 +351,26 @@ def comment(item_id):
 @login_required
 def edit_product(id):
     form = ProductForm()
-    if request.method == "GET":
-        db_sess = db_session.create_session()
-        product = db_sess.query(Product).filter(Product.id == id,
-                                                Product.user == current_user
-                                                ).first()
-        if product:
+    db_sess = db_session.create_session()
+    # Убираем фильтр по Product.user из запроса
+    product = db_sess.query(Product).filter(Product.id == id).first()
+
+    # Добавляем проверку: товар принадлежит юзеру ИЛИ юзер является админом
+    if product and (product.user == current_user or current_user.role == "a"):
+        if request.method == "GET":
             form.title.data = product.title
             form.content.data = product.content
             form.price.data = product.price
-            #form.quantity.data = product.quantity
             form.breed.data = product.breed
             form.color.data = product.color
             form.age_months.data = product.age_months
             form.gender.data = product.gender
             form.vaccinated.data = product.vaccinated
-        else:
-            abort(404)
-    if form.validate_on_submit():
-        db_sess = db_session.create_session()
-        product = db_sess.query(Product).filter(Product.id == id,
-                                                Product.user == current_user
-                                                ).first()
-        if product:
+
+        if form.validate_on_submit():
             product.title = form.title.data
             product.content = form.content.data
             product.price = form.price.data
-            #product.quantity = form.quantity.data
             product.breed = form.breed.data
             product.color = form.color.data
             product.age_months = form.age_months.data
@@ -382,22 +380,19 @@ def edit_product(id):
                 product.image_data = form.image.data.read()
             db_sess.commit()
             return redirect('/')
-        else:
-            abort(404)
-    return render_template('product.html',
-                           title='Редактирование товара',
-                           form=form
-                           )
+        return render_template('product.html', title='Редактирование товара', form=form)
+    else:
+        abort(404)
 
 
 @app.route('/products_delete/<int:id>', methods=['GET', 'POST'])
 @login_required
 def product_delete(id):
     db_sess = db_session.create_session()
-    product = db_sess.query(Product).filter(Product.id == id,
-                                            Product.user == current_user
-                                            ).first()
-    if product:
+    product = db_sess.query(Product).filter(Product.id == id).first()
+
+    # Аналогичная проверка
+    if product and (product.user == current_user or current_user.role == "a"):
         db_sess.delete(product)
         db_sess.commit()
     else:
