@@ -2,56 +2,92 @@
 
 {% block content %}
 <h1>{{ title }}</h1>
+
+{% if message %}
+    <div class="alert alert-danger">{{ message }}</div>
+{% endif %}
+
 <form method="POST" enctype="multipart/form-data">
     {{ form.hidden_tag() }}
 
     <div class="form-group">
         {{ form.title.label(class="form-control-label") }}
         {{ form.title(class="form-control") }}
+        {% for error in form.title.errors %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endfor %}
     </div>
 
     <div class="form-group">
         {{ form.content.label(class="form-control-label") }}
         {{ form.content(class="form-control") }}
+        {% for error in form.content.errors %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endfor %}
     </div>
 
     <div class="form-group">
         {{ form.price.label(class="form-control-label") }}
         {{ form.price(class="form-control") }}
+        {% for error in form.price.errors %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endfor %}
     </div>
-
-    <!-- ПОЛЕ QUANTITY УДАЛЕНО -->
 
     <div class="form-group">
         {{ form.breed.label(class="form-control-label") }}
         {{ form.breed(class="form-control") }}
+        {% for error in form.breed.errors %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endfor %}
     </div>
 
     <div class="form-group">
         {{ form.color.label(class="form-control-label") }}
         {{ form.color(class="form-control") }}
+        {% for error in form.color.errors %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endfor %}
     </div>
 
     <div class="form-group">
         {{ form.age_months.label(class="form-control-label") }}
         {{ form.age_months(class="form-control") }}
+        {% for error in form.age_months.errors %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endfor %}
     </div>
 
     <div class="form-group">
         {{ form.gender.label(class="form-control-label") }}
         {{ form.gender(class="form-control") }}
+        {% for error in form.gender.errors %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endfor %}
     </div>
 
-    <div class="form-group form-check">
-        {{ form.vaccinated(class="form-check-input") }}
-        {{ form.vaccinated.label(class="form-check-label") }}
+    <div class="form-group">
+        {{ form.vaccinated.label(class="form-control-label") }}
+        {{ form.vaccinated(class="form-control") }}
+        {% for error in form.vaccinated.errors %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endfor %}
     </div>
 
     <div class="form-group">
         {{ form.image.label(class="form-control-label") }}
         {{ form.image(class="form-control") }}
+        {% for error in form.image.errors %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endfor %}
+        {% if title == "Редактирование товара" %}
+            <small class="form-text text-muted">Оставьте пустым, если не хотите менять фото</small>
+        {% else %}
+            <small class="form-text text-muted">Обязательно выберите фото кота</small>
+        {% endif %}
     </div>
 
     <button type="submit" class="btn btn-primary">Сохранить</button>
+    <a href="{{ url_for('profile') }}" class="btn btn-secondary">Отмена</a>
 </form>
 {% endblock %}

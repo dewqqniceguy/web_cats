@@ -7,7 +7,7 @@ from flask_login import LoginManager, login_user, login_required, logout_user, c
 from werkzeug.utils import secure_filename
 
 from data import db_session
-from flask import Flask, render_template, redirect, abort, request, current_app
+from flask import Flask, render_template, redirect, abort, request, current_app, flash
 
 from data.basket import Basket
 from data.basket_item import BasketItem
@@ -26,6 +26,8 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 login_manager = LoginManager()
 login_manager.init_app(app)
+login_manager.login_view = 'login'
+login_manager.login_message = 'Пожалуйста, авторизуйтесь для доступа к этой странице.'
 UPLOAD_FOLDER = 'static/images'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
@@ -47,15 +49,19 @@ def main():
 @app.route("/")
 def index():
     db_sess = db_session.create_session()
-    product = db_sess.query(Product)
-    lis = []
-    for i in product:
-        i.image_data = base64.b64encode(i.image_data).decode("utf-8")
-        lis.append(i)
-    if "AnonymousUserMixin" not in str(current_user):
-        return render_template("index.html", product=lis, url="/profile", name_b=current_user.name)
-    return render_template("index.html", product=lis)
+    products = db_sess.query(Product).all()
 
+    for product in products:
+        # Проверяем, есть ли изображение
+        if product.image_data is not None:
+            product.image_data = base64.b64encode(product.image_data).decode("utf-8")
+        else:
+            # Если нет изображения, ставим None или путь к заглушке
+            product.image_data = None
+
+    if current_user.is_authenticated:
+        return render_template("index.html", product=products, url="/profile", name_b=current_user.name)
+    return render_template("index.html", product=products)
 
 @app.route('/register', methods=['GET', 'POST'])
 def reqister():
@@ -272,31 +278,33 @@ def add_product():
         db_sess = db_session.create_session()
         product = Product()
 
+        # Проверяем, что файл загружен
+        if not form.image.data:
+            return render_template('product.html', title='Добавление товара', form=form,
+                                   message="Пожалуйста, выберите фото кота")
+
         product.title = form.title.data
         product.content = form.content.data
         product.price = form.price.data
         product.quantity = 1
-        #product.quantity = form.quantity.data
         product.breed = form.breed.data
         product.color = form.color.data
         product.age_months = form.age_months.data
         product.gender = form.gender.data
-        product.vaccinated = form.vaccinated.data
+
+        # Преобразуем строку 'yes'/'no' в булево значение
+        product.vaccinated = (form.vaccinated.data == 'yes')
+
         product.user_id = current_user.id
-        # if form.image.data:
-        #     image = form.image.data
-        #     if image and allowed_file(image.filename):
-        #         filename = secure_filename(image.filename)
-        #         filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-        #         image.save(filepath)
-        #         product.image_path = 'images/' + filename
-        if form.image.data:
-            product.image_data = form.image.data.read()
+
+        # Сохраняем изображение
+        product.image_data = form.image.data.read()
+
         db_sess.add(product)
         db_sess.commit()
         return redirect('/profile')
-    return render_template('product.html', title='Добавление товара', form=form)
 
+    return render_template('product.html', title='Добавление товара', form=form)
 
 @app.route('/comment/<int:id>', methods=['GET', 'POST'])
 @login_required
@@ -352,10 +360,8 @@ def comment(item_id):
 def edit_product(id):
     form = ProductForm()
     db_sess = db_session.create_session()
-    # Убираем фильтр по Product.user из запроса
     product = db_sess.query(Product).filter(Product.id == id).first()
 
-    # Добавляем проверку: товар принадлежит юзеру ИЛИ юзер является админом
     if product and (product.user == current_user or current_user.role == "a"):
         if request.method == "GET":
             form.title.data = product.title
@@ -365,7 +371,8 @@ def edit_product(id):
             form.color.data = product.color
             form.age_months.data = product.age_months
             form.gender.data = product.gender
-            form.vaccinated.data = product.vaccinated
+            # Преобразуем булево значение обратно в строку для формы
+            form.vaccinated.data = 'yes' if product.vaccinated else 'no'
 
         if form.validate_on_submit():
             product.title = form.title.data
@@ -375,9 +382,12 @@ def edit_product(id):
             product.color = form.color.data
             product.age_months = form.age_months.data
             product.gender = form.gender.data
-            product.vaccinated = form.vaccinated.data
-            if form.image.data:
+            product.vaccinated = (form.vaccinated.data == 'yes')
+
+            # Обновляем картинку ТОЛЬКО если пользователь выбрал новый файл
+            if form.image.data and form.image.data.filename:
                 product.image_data = form.image.data.read()
+
             db_sess.commit()
             return redirect('/')
         return render_template('product.html', title='Редактирование товара', form=form)
@@ -403,7 +413,7 @@ def product_delete(id):
 @login_manager.user_loader
 def load_user(user_id):
     db_sess = db_session.create_session()
-    return db_sess.query(User).get(user_id)
+    return db_sess.get(User, user_id)
 
 
 @app.route('/login', methods=['GET', 'POST'])

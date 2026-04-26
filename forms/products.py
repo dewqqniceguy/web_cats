@@ -1,23 +1,18 @@
 from flask_wtf import FlaskForm
-from flask_wtf.file import FileField
-from wtforms import StringField, TextAreaField, SubmitField, FloatField, BooleanField
-from wtforms.fields.choices import SelectField
-from wtforms.fields.numeric import IntegerField
-from wtforms.validators import DataRequired
-
+from flask_wtf.file import FileField, FileAllowed
+from wtforms import StringField, TextAreaField, IntegerField, FloatField, SelectField
+from wtforms.validators import DataRequired, Optional
 
 class ProductForm(FlaskForm):
-    title = StringField('Имя котика / Заголовок', validators=[DataRequired()])
-    content = TextAreaField("Описание (характер, привычки)")
-    price = FloatField("Цена в ₽", validators=[DataRequired()])
-    #quantity = IntegerField("Количество", validators=[DataRequired()])
-
-    # Характеристики котика
-    breed = StringField('Порода (или "Беспородный")', validators=[DataRequired()])
+    title = StringField('Название', validators=[DataRequired()])
+    content = TextAreaField('Описание', validators=[DataRequired()])
+    price = FloatField('Цена (₽)', validators=[DataRequired()])
+    breed = StringField('Порода', validators=[DataRequired()])
     color = StringField('Окрас', validators=[DataRequired()])
-    age_months = IntegerField('Возраст (в месяцах)', validators=[DataRequired()])
-    gender = SelectField('Пол', choices=[('boy', 'Мальчик'), ('girl', 'Девочка')], validators=[DataRequired()])
-    vaccinated = BooleanField("Привит(а)")
-
-    image = FileField('Фотография котика')
-    submit = SubmitField('Разместить котика')
+    age_months = IntegerField('Возраст (месяцев)', validators=[DataRequired()])
+    gender = SelectField('Пол', choices=[('male', 'Мальчик'), ('female', 'Девочка')], validators=[DataRequired()])
+    vaccinated = SelectField('Привит(а)', choices=[('yes', 'Да'), ('no', 'Нет')], validators=[DataRequired()])
+    image = FileField('Фото кота', validators=[
+        FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 'Разрешены только изображения!'),
+        Optional()  # Теперь поле необязательное
+    ])
