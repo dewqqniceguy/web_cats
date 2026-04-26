@@ -287,6 +287,7 @@ def add_product():
         product.content = form.content.data
         product.price = form.price.data
         product.quantity = 1
+
         product.breed = form.breed.data
         product.color = form.color.data
         product.age_months = form.age_months.data

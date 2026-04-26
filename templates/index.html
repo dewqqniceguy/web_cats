@@ -20,7 +20,7 @@
                 <h6 class="card-subtitle mb-2 text-muted">{{ item.breed }}</h6>
                 <p class="card-text text-truncate">{{ item.content }}</p>
                 <ul class="list-unstyled small">
-                    <li><strong>Пол:</strong> {{ 'Мальчик ' if item.gender == 'boy' else 'Девочка ' }}</li>
+                    <li><strong>Пол:</strong> {{ 'Мальчик' if item.gender == 'male' else 'Девочка' }}</li>
                     <li><strong>Возраст:</strong> {{ item.age_months }} мес.</li>
                     <li><strong>Окрас:</strong> {{ item.color }}</li>
                     <li><strong>Прививки:</strong> {{ ' Есть' if item.vaccinated else ' Нет' }}</li>
