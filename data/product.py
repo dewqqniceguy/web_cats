@@ -14,7 +14,6 @@ class Product(SqlAlchemyBase):
     rating = sqlalchemy.Column(sqlalchemy.Float, default=0.00)
     #quantity = sqlalchemy.Column(sqlalchemy.Integer)
 
-    # новые поля для Мяу-Маркета
     breed = sqlalchemy.Column(sqlalchemy.String, nullable=True)  # порода
     color = sqlalchemy.Column(sqlalchemy.String, nullable=True)  # окрас
     age_months = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)  # возраст в месяцах

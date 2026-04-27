@@ -2,92 +2,93 @@
 
 {% block content %}
 <h1>{{ title }}</h1>
-
-{% if message %}
-    <div class="alert alert-danger">{{ message }}</div>
-{% endif %}
-
-<form method="POST" enctype="multipart/form-data">
+<form action="" method="post" enctype="multipart/form-data" novalidate>
     {{ form.hidden_tag() }}
 
-    <div class="form-group">
-        {{ form.title.label(class="form-control-label") }}
-        {{ form.title(class="form-control") }}
+    {% if message %}
+        <div class="alert alert-danger" role="alert">
+            {{ message }}
+        </div>
+    {% endif %}
+
+    <p>
+        {{ form.title.label }}<br>
+        {{ form.title(class="form-control") }}<br>
         {% for error in form.title.errors %}
-            <div class="alert alert-danger">{{ error }}</div>
+            <div class="alert alert-danger" role="alert">{{ error }}</div>
         {% endfor %}
-    </div>
+    </p>
 
-    <div class="form-group">
-        {{ form.content.label(class="form-control-label") }}
-        {{ form.content(class="form-control") }}
+    <p>
+        {{ form.content.label }}<br>
+        {{ form.content(class="form-control", rows=5) }}<br>
         {% for error in form.content.errors %}
-            <div class="alert alert-danger">{{ error }}</div>
+            <div class="alert alert-danger" role="alert">{{ error }}</div>
         {% endfor %}
-    </div>
+    </p>
 
-    <div class="form-group">
-        {{ form.price.label(class="form-control-label") }}
-        {{ form.price(class="form-control") }}
+    <p>
+        {{ form.price.label }}<br>
+        {{ form.price(class="form-control", type="number", step="0.01", min="0") }}<br>
         {% for error in form.price.errors %}
-            <div class="alert alert-danger">{{ error }}</div>
+            <div class="alert alert-danger" role="alert">{{ error }}</div>
         {% endfor %}
-    </div>
+    </p>
 
-    <div class="form-group">
-        {{ form.breed.label(class="form-control-label") }}
-        {{ form.breed(class="form-control") }}
+    <p>
+        {{ form.breed.label }}<br>
+        {{ form.breed(class="form-control") }}<br>
         {% for error in form.breed.errors %}
-            <div class="alert alert-danger">{{ error }}</div>
+            <div class="alert alert-danger" role="alert">{{ error }}</div>
         {% endfor %}
-    </div>
+    </p>
 
-    <div class="form-group">
-        {{ form.color.label(class="form-control-label") }}
-        {{ form.color(class="form-control") }}
+    <p>
+        {{ form.color.label }}<br>
+        {{ form.color(class="form-control") }}<br>
         {% for error in form.color.errors %}
-            <div class="alert alert-danger">{{ error }}</div>
+            <div class="alert alert-danger" role="alert">{{ error }}</div>
         {% endfor %}
-    </div>
+    </p>
 
-    <div class="form-group">
-        {{ form.age_months.label(class="form-control-label") }}
-        {{ form.age_months(class="form-control") }}
+    <p>
+        {{ form.age_months.label }}<br>
+        {{ form.age_months(class="form-control", type="number", step="1", min="0") }}<br>
         {% for error in form.age_months.errors %}
-            <div class="alert alert-danger">{{ error }}</div>
+            <div class="alert alert-danger" role="alert">{{ error }}</div>
         {% endfor %}
-    </div>
+    </p>
 
-    <div class="form-group">
-        {{ form.gender.label(class="form-control-label") }}
-        {{ form.gender(class="form-control") }}
+    <p>
+        {{ form.gender.label }}<br>
+        {{ form.gender(class="form-select") }}<br>
         {% for error in form.gender.errors %}
-            <div class="alert alert-danger">{{ error }}</div>
+            <div class="alert alert-danger" role="alert">{{ error }}</div>
         {% endfor %}
-    </div>
+    </p>
 
-    <div class="form-group">
-        {{ form.vaccinated.label(class="form-control-label") }}
-        {{ form.vaccinated(class="form-control") }}
+    <p>
+        {{ form.vaccinated.label }}<br>
+        {{ form.vaccinated(class="form-select") }}<br>
         {% for error in form.vaccinated.errors %}
-            <div class="alert alert-danger">{{ error }}</div>
+            <div class="alert alert-danger" role="alert">{{ error }}</div>
         {% endfor %}
-    </div>
+    </p>
 
-    <div class="form-group">
-        {{ form.image.label(class="form-control-label") }}
-        {{ form.image(class="form-control") }}
-        {% for error in form.image.errors %}
-            <div class="alert alert-danger">{{ error }}</div>
-        {% endfor %}
-        {% if title == "Редактирование товара" %}
-            <small class="form-text text-muted">Оставьте пустым, если не хотите менять фото</small>
-        {% else %}
-            <small class="form-text text-muted">Обязательно выберите фото кота</small>
+    <p>
+        {{ form.image.label }}<br>
+        {{ form.image(class="form-control", type="file", accept="image/*") }}<br>
+        {% if product_image %}
+            <div class="mt-2">
+                <img src="data:image/jpeg;base64,{{ product_image }}" alt="Текущее фото" style="max-height: 100px;">
+                <small class="text-muted">Оставьте поле пустым, чтобы не менять фото</small>
+            </div>
         {% endif %}
-    </div>
+        {% for error in form.image.errors %}
+            <div class="alert alert-danger" role="alert">{{ error }}</div>
+        {% endfor %}
+    </p>
 
-    <button type="submit" class="btn btn-primary">Сохранить</button>
-    <a href="{{ url_for('profile') }}" class="btn btn-secondary">Отмена</a>
+    <p>{{ form.submit(class="btn btn-primary") }}</p>
 </form>
 {% endblock %}

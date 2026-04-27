@@ -2,6 +2,9 @@
 
 {% block content %}
 <h1>Админ-панель</h1>
+<div class="mb-3">
+    <a href="/banned_list" class="btn btn-warning">Список заблокированных пользователей</a>
+</div>
 <div class="row">
     {% for item in users %}
         <div class="col-md-6 border rounded p-3 mb-2">

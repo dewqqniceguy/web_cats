@@ -8,7 +8,7 @@ from werkzeug.utils import secure_filename
 
 from data import db_session
 from flask import Flask, render_template, redirect, abort, request, current_app, flash
-
+from forms.unban import UnbanForm
 from data.basket import Basket
 from data.basket_item import BasketItem
 from data.comments import Comment
@@ -22,6 +22,8 @@ from forms.products import ProductForm
 from forms.quantity import QuantityForm
 from forms.user import RegisterForm
 import base64
+from forms.add_product import AddProductForm
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 login_manager = LoginManager()
@@ -40,28 +42,30 @@ def allowed_file(filename):
 
 def main():
     db_session.global_init("db/products.sqlite")
+
     db_sess = db_session.create_session()
     if not db_sess.query(User).first():
         create_admin_user()
+    db_sess.close()
+
     app.run()
 
 
 @app.route("/")
 def index():
-    db_sess = db_session.create_session()
-    products = db_sess.query(Product).all()
+    with db_session.create_session() as db_sess:
+        products = db_sess.query(Product).all()
 
-    for product in products:
-        # Проверяем, есть ли изображение
-        if product.image_data is not None:
-            product.image_data = base64.b64encode(product.image_data).decode("utf-8")
-        else:
-            # Если нет изображения, ставим None или путь к заглушке
-            product.image_data = None
+        for product in products:
+            if product.image_data is not None:
+                product.image_data = base64.b64encode(product.image_data).decode("utf-8")
+            else:
+                product.image_data = None
 
-    if current_user.is_authenticated:
-        return render_template("index.html", product=products, url="/profile", name_b=current_user.name)
-    return render_template("index.html", product=products)
+        if current_user.is_authenticated:
+            return render_template("index.html", product=products, url="/profile", name_b=current_user.name)
+        return render_template("index.html", product=products)
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def reqister():
@@ -71,135 +75,181 @@ def reqister():
             return render_template('register.html', title='Регистрация',
                                    form=form,
                                    message="Пароли не совпадают")
-        db_sess = db_session.create_session()
-        if db_sess.query(User).filter(User.email == form.email.data).first():
-            return render_template('register.html', title='Регистрация',
-                                   form=form,
-                                   message="Такой пользователь уже есть")
-        if db_sess.query(BannedEmail).filter(BannedEmail.email == form.email.data).first():
-            return render_template('register.html', title='Регистрация',
-                                   form=form,
-                                   message="Вы забанены на сайте")
-        user = User(
-            name=form.name.data,
-            email=form.email.data,
-            age=form.age.data
-        )
-        user.set_password(form.password.data)
-        db_sess.add(user)
-        db_sess.commit()
-        return redirect('/login')
+
+        with db_session.create_session() as db_sess:
+            existing_user = db_sess.query(User).filter(User.email == form.email.data).first()
+            if existing_user:
+                return render_template('register.html', title='Регистрация',
+                                       form=form,
+                                       message=f"Пользователь с почтой {form.email.data} уже зарегистрирован")
+
+            banned = db_sess.query(BannedEmail).filter(BannedEmail.email == form.email.data).first()
+            if banned:
+                reason = f" Причина: {banned.reason}" if banned.reason else ""
+                return render_template('register.html', title='Регистрация',
+                                       form=form,
+                                       message=f"Эта почта заблокирована.{reason}")
+
+            user = User(
+                name=form.name.data,
+                email=form.email.data,
+                age=form.age.data,
+                city=form.city.data
+            )
+            user.set_password(form.password.data)
+            db_sess.add(user)
+            db_sess.commit()
+
+            return redirect('/login')
+
     return render_template('register.html', title='Регистрация', form=form)
 
 
 @app.route("/profile")
 @login_required
 def profile():
-    db_sess = db_session.create_session()
-    product = db_sess.query(Product)
-    return render_template("profile.html", product=product, url="/", name_b="Вернуться на главную")
+    with db_session.create_session() as db_sess:
+        products = db_sess.query(Product).filter(Product.user_id == current_user.id).all()
+
+        for product in products:
+            if product.image_data:
+                product.image_data = base64.b64encode(product.image_data).decode("utf-8")
+
+        return render_template("profile.html", product=products)
 
 
 @app.route("/purchase/<int:id>", methods=['GET', 'POST'])
 @login_required
 def purchase(id):
-    db_sess = db_session.create_session()
-    basket = db_sess.query(Basket).filter(Basket.user == current_user).first()
-    if not basket:
-        basket = Basket()
-        basket.user_id = current_user.id
-        db_sess.add(basket)
-        db_sess.commit()
-
-    # Проверяем, есть ли уже этот товар в корзине
-    b_item = db_sess.query(BasketItem).filter(BasketItem.product_id == id).first()
-    product = db_sess.query(Product).filter(Product.id == id).first()
-
-    if product:
-        # Если товара ещё нет в корзине - добавляем
-        if not b_item:
-            b_item = BasketItem()
-            b_item.product_id = id
-            b_item.basket_id = basket.id
-            b_item.quantity = 1  # Всегда 1 кот
-            db_sess.add(b_item)
+    with db_session.create_session() as db_sess:  # ← добавить with
+        basket = db_sess.query(Basket).filter(Basket.user == current_user).first()
+        if not basket:
+            basket = Basket()
+            basket.user_id = current_user.id
+            db_sess.add(basket)
             db_sess.commit()
-        # Если уже есть - не добавляем повторно (или можно добавить, но я запрещаю)
+
+        b_item = db_sess.query(BasketItem).filter(BasketItem.product_id == id).first()
+        product = db_sess.query(Product).filter(Product.id == id).first()
+
+        if product:
+            if not b_item:
+                b_item = BasketItem()
+                b_item.product_id = id
+                b_item.basket_id = basket.id
+                b_item.quantity = 1
+                db_sess.add(b_item)
+                db_sess.commit()
         else:
-            # Товар уже в корзине, ничего не делаем
-            pass
-    else:
-        abort(404)
+            abort(404)
+
     return redirect("/")
+
+
+@app.route("/banned_list")
+@login_required
+def banned_list():
+    if current_user.role != "a":
+        abort(404)
+
+    with db_session.create_session() as db_sess:  # ← добавить with
+        banned_emails = db_sess.query(BannedEmail).all()
+        return render_template("banned_list.html", banned_emails=banned_emails)
+
+
+@app.route("/unban/<int:banned_id>", methods=['GET', 'POST'])
+@login_required
+def unban(banned_id):
+    if current_user.role != "a":
+        abort(404)
+
+    form = UnbanForm()
+
+    with db_session.create_session() as db_sess:  # ← добавить with
+        banned_email = db_sess.query(BannedEmail).filter(BannedEmail.id == banned_id).first()
+
+        if not banned_email:
+            abort(404)
+
+        if form.validate_on_submit():
+            db_sess.delete(banned_email)
+            db_sess.commit()
+            return redirect("/banned_list")
+
+        return render_template("unban.html", form=form, banned_email=banned_email)
 
 
 @app.route("/ban/<int:item_id>", methods=['GET', 'POST'])
 @login_required
 def ban(item_id):
-    if current_user.role == "a":
-        form = BanForm()
-        db_sess = db_session.create_session()
-        user = db_sess.query(User).filter(User.id == item_id).first()
-        if user and user != current_user:
-            if form.validate_on_submit():
-                if form.password_for_ban.data != "123ban":
-                    return render_template('ban.html', title='Забанить пользователя',
-                                           form=form,
-                                           message="Вы ввели код неправильно")
-                else:
-                    ban_record = BannedEmail()
-                    ban_record.email = user.email
-                    ban_record.reason = form.reason.data
-
-                    # Удаляем все товары пользователя, чтобы не сломать ленту
-                    db_sess.query(Product).filter(Product.user_id == user.id).delete()
-                    # Если нужно, здесь же можно удалить комментарии пользователя
-                    db_sess.query(Comment).filter(Comment.user_id == user.id).delete()
-
-                    db_sess.delete(user)
-                    db_sess.add(ban_record)
-                    db_sess.commit()
-                    return redirect("/admin")  # Лучше редиректить обратно в админку
-        else:
-            abort(404)
-        return render_template('ban.html', user=user, form=form, title="Забанить пользователя", url="/",
-                               name_b="Вернуться на главную")
-    else:
+    if current_user.role != "a":
         abort(404)
+
+    form = BanForm()
+
+    with db_session.create_session() as db_sess:  # ← with автоматически закроет
+        user = db_sess.query(User).filter(User.id == item_id).first()
+
+        if not user or user == current_user:
+            abort(404)
+
+        if form.validate_on_submit():
+            ban_record = BannedEmail()
+            ban_record.email = user.email
+            ban_record.reason = form.reason.data
+
+
+            basket = db_sess.query(Basket).filter(Basket.user_id == user.id).first()
+            if basket:
+                db_sess.query(BasketItem).filter(BasketItem.basket_id == basket.id).delete()
+                db_sess.delete(basket)
+
+
+            db_sess.query(Product).filter(Product.user_id == user.id).delete()
+
+            db_sess.query(Comment).filter(Comment.user_id == user.id).delete()
+
+            db_sess.delete(user)
+            db_sess.add(ban_record)
+            db_sess.commit()
+            return redirect("/admin")
+
+        return render_template('ban.html', user=user, form=form, title="Забанить пользователя",
+                               url="/", name_b="Вернуться на главную")
 
 
 @app.route("/admin", methods=['GET', 'POST'])
 @login_required
 def admin():
-    if current_user.role == "a":
-        db_sess = db_session.create_session()
+    if current_user.role != "a":
+        abort(404)
+
+    with db_session.create_session() as db_sess:  # ← добавить with
         users = db_sess.query(User).filter(User.id != 1).all()
         return render_template("admin.html", users=users, url="/profile", name_b="Вернуться в профиль")
-    else:
-        abort(404)
 
 
 @app.route("/basket", methods=['GET', 'POST'])
 @login_required
 def basket():
-    db_sess = db_session.create_session()
-    basket = db_sess.query(Basket).filter(Basket.user_id == current_user.id).first()
-    if basket:
-        b_items = db_sess.query(BasketItem).filter(BasketItem.basket_id == basket.id).all()
-        t_price = 0
-        t_quantity = 0
-        for item in b_items:
-            t_price += item.product.price * item.quantity
-            t_quantity += item.quantity
-        return render_template("basket.html", basket_items=b_items, basket=basket,
-                               t_price=t_price, t_quantity=t_quantity)
-    else:
-        return render_template("basket.html", basket=basket)
+    with db_session.create_session() as db_sess:  # ← добавить with
+        basket = db_sess.query(Basket).filter(Basket.user_id == current_user.id).first()
+        if basket:
+            b_items = db_sess.query(BasketItem).filter(BasketItem.basket_id == basket.id).all()
+            t_price = 0
+            t_quantity = 0
+            for item in b_items:
+                t_price += item.product.price * item.quantity
+                t_quantity += item.quantity
+            return render_template("basket.html", basket_items=b_items, basket=basket,
+                                   t_price=t_price, t_quantity=t_quantity)
+        else:
+            return render_template("basket.html", basket=basket)
 
 
-#@app.route("/quantity/<int:item_id>", methods=['GET', 'POST'])
-#@login_required
-#def quantity(item_id):
+# @app.route("/quantity/<int:item_id>", methods=['GET', 'POST'])
+# @login_required
+# def quantity(item_id):
 #    form = QuantityForm()
 #    db_sess = db_session.create_session()
 #    basket_item = db_sess.query(BasketItem).filter(BasketItem.product_id == item_id).first()
@@ -224,37 +274,32 @@ def basket():
 @app.route("/buy", methods=['GET', 'POST'])
 @login_required
 def buy():
-    db_sess = db_session.create_session()
-    basket = db_sess.query(Basket).filter(Basket.user == current_user).first()
-    if not basket:
+    with db_session.create_session() as db_sess:  # ← добавить with
+        basket = db_sess.query(Basket).filter(Basket.user == current_user).first()
+        if not basket:
+            return redirect("/")
+
+        basket_items = db_sess.query(BasketItem).filter(BasketItem.basket_id == basket.id).all()
+
+        if basket_items:
+            for item in basket_items:
+                product = db_sess.query(Product).filter(Product.id == item.product_id).first()
+                if product:
+                    if product.price <= current_user.balance:
+                        seller = db_sess.query(User).filter(User.id == product.user_id).first()
+                        current_user.balance -= product.price
+                        seller.balance += product.price
+                        db_sess.delete(product)
+                        db_sess.commit()
+                    else:
+                        return redirect("/balance")
+
+            for item in basket_items:
+                db_sess.delete(item)
+            db_sess.delete(basket)
+            db_sess.commit()
+
         return redirect("/")
-
-    basket_items = db_sess.query(BasketItem).filter(BasketItem.basket_id == basket.id).all()
-
-    if basket_items:
-        for item in basket_items:
-            product = db_sess.query(Product).filter(Product.id == item.product_id).first()
-            if product:
-                # Проверяем баланс (цена * количество, но количество всегда 1)
-                if product.price <= current_user.balance:
-                    # Переводим деньги продавцу
-                    seller = db_sess.query(User).filter(User.id == product.user_id).first()
-                    current_user.balance -= product.price
-                    seller.balance += product.price
-
-                    # Удаляем товар (кот продан)
-                    db_sess.delete(product)
-                    db_sess.commit()
-                else:
-                    return redirect("/balance")
-
-        # Очищаем корзину
-        for item in basket_items:
-            db_sess.delete(item)
-        db_sess.delete(basket)
-        db_sess.commit()
-
-    return redirect("/")
 
 
 @app.route("/balance", methods=["GET", "POST"])
@@ -262,50 +307,40 @@ def buy():
 def balance():
     form = BalanceForm()
     if form.validate_on_submit():
-        db_sess = db_session.create_session()
-        current_user.balance += form.balance.data
-        db_sess.merge(current_user)
-        db_sess.commit()
-        return redirect("/")
+        with db_session.create_session() as db_sess:  # ← добавить with
+            current_user.balance += form.balance.data
+            db_sess.merge(current_user)
+            db_sess.commit()
+            return redirect("/")
     return render_template("balance.html", form=form, name_b="Вернуться на главную", url="/")
 
 
 @app.route('/products', methods=['GET', 'POST'])
 @login_required
 def add_product():
-    form = ProductForm()
+    form = AddProductForm()
     if form.validate_on_submit():
-        db_sess = db_session.create_session()
-        product = Product()
+        with db_session.create_session() as db_sess:
+            product = Product()
 
-        # Проверяем, что файл загружен
-        if not form.image.data:
-            return render_template('product.html', title='Добавление товара', form=form,
-                                   message="Пожалуйста, выберите фото кота")
+            product.title = form.title.data
+            product.content = form.content.data
+            product.price = form.price.data
+            product.quantity = 1
+            product.breed = form.breed.data
+            product.color = form.color.data
+            product.age_months = form.age_months.data
+            product.gender = form.gender.data
+            product.vaccinated = (form.vaccinated.data == 'yes')
+            product.user_id = current_user.id
+            product.image_data = form.image.data.read()
 
-        product.title = form.title.data
-        product.content = form.content.data
-        product.price = form.price.data
-        product.quantity = 1
-
-        product.breed = form.breed.data
-        product.color = form.color.data
-        product.age_months = form.age_months.data
-        product.gender = form.gender.data
-
-        # Преобразуем строку 'yes'/'no' в булево значение
-        product.vaccinated = (form.vaccinated.data == 'yes')
-
-        product.user_id = current_user.id
-
-        # Сохраняем изображение
-        product.image_data = form.image.data.read()
-
-        db_sess.add(product)
-        db_sess.commit()
-        return redirect('/profile')
+            db_sess.add(product)
+            db_sess.commit()
+            return redirect('/profile')
 
     return render_template('product.html', title='Добавление товара', form=form)
+
 
 @app.route('/comment/<int:id>', methods=['GET', 'POST'])
 @login_required
@@ -372,8 +407,11 @@ def edit_product(id):
             form.color.data = product.color
             form.age_months.data = product.age_months
             form.gender.data = product.gender
-            # Преобразуем булево значение обратно в строку для формы
             form.vaccinated.data = 'yes' if product.vaccinated else 'no'
+
+            product_image = None
+            if product.image_data:
+                product_image = base64.b64encode(product.image_data).decode("utf-8")
 
         if form.validate_on_submit():
             product.title = form.title.data
@@ -385,13 +423,17 @@ def edit_product(id):
             product.gender = form.gender.data
             product.vaccinated = (form.vaccinated.data == 'yes')
 
-            # Обновляем картинку ТОЛЬКО если пользователь выбрал новый файл
             if form.image.data and form.image.data.filename:
                 product.image_data = form.image.data.read()
 
             db_sess.commit()
             return redirect('/')
-        return render_template('product.html', title='Редактирование товара', form=form)
+
+        product_image = None
+        if product.image_data:
+            product_image = base64.b64encode(product.image_data).decode("utf-8")
+
+        return render_template('product.html', title='Редактирование товара', form=form, product_image=product_image)
     else:
         abort(404)
 
@@ -402,7 +444,7 @@ def product_delete(id):
     db_sess = db_session.create_session()
     product = db_sess.query(Product).filter(Product.id == id).first()
 
-    # Аналогичная проверка
+
     if product and (product.user == current_user or current_user.role == "a"):
         db_sess.delete(product)
         db_sess.commit()
@@ -413,22 +455,31 @@ def product_delete(id):
 
 @login_manager.user_loader
 def load_user(user_id):
-    db_sess = db_session.create_session()
-    return db_sess.get(User, user_id)
+    with db_session.create_session() as db_sess:
+        return db_sess.get(User, user_id)
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
     if form.validate_on_submit():
-        db_sess = db_session.create_session()
-        user = db_sess.query(User).filter(User.email == form.email.data).first()
-        if user and user.check_password(form.password.data):
-            login_user(user, remember=form.remember_me.data)
-            return redirect("/")
-        return render_template('login.html',
-                               message="Неправильный логин или пароль",
-                               form=form)
+        with db_session.create_session() as db_sess:
+
+            banned = db_sess.query(BannedEmail).filter(BannedEmail.email == form.email.data).first()
+            if banned:
+                reason = f" Причина: {banned.reason}" if banned.reason else ""
+                return render_template('login.html',
+                                       message=f"Ваш email заблокирован.{reason}",
+                                       form=form)
+
+            user = db_sess.query(User).filter(User.email == form.email.data).first()
+            if user and user.check_password(form.password.data):
+                login_user(user, remember=form.remember_me.data)
+                return redirect("/")
+
+            return render_template('login.html',
+                                   message="Неправильный логин или пароль",
+                                   form=form)
     return render_template('login.html', title='Авторизация', form=form)
 
 

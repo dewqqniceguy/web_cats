@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Заблокированные пользователи</h1>
+<div class="row">
+    {% if banned_emails %}
+        {% for banned in banned_emails %}
+            <div class="col-md-6 border rounded p-3 mb-2">
+                <h2>{{ banned.email }}</h2>
+                <div>
+                    <strong>ID:</strong> {{ banned.id }} |
+                    <strong>Причина бана:</strong> {{ banned.reason if banned.reason else "Не указана" }}
+                </div>
+                <a href="/unban/{{ banned.id }}" class="btn btn-success mt-2">Разблокировать</a>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>Нет заблокированных пользователей</p>
+    {% endif %}
+</div>
+<a href="/admin" class="btn btn-secondary mt-3">Назад в админ-панель</a>
+{% endblock %}
