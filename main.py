@@ -28,6 +28,7 @@ import base64
 from forms.add_product import AddProductForm
 from sqlalchemy import func as db_func
 
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 login_manager = LoginManager()
@@ -52,7 +53,7 @@ def main():
         create_admin_user()
     db_sess.close()
 
-    app.run()
+    app.run(port=5000, host='0.0.0.0')
 
 
 @app.route("/")
