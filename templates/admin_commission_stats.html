@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Статистика комиссий</h1>
+        <a href="/admin" class="btn btn-secondary">← Назад в админ-панель</a>
+    </div>
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">Продавцы и их доходы (90%)</h3>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Продавец</th>
+                        <th class="text-center">Количество продаж</th>
+                        <th class="text-end">Получено (90%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for seller in seller_stats %}
+                    <tr>
+                        <td>{{ seller.name }}</td>
+                        <td class="text-center">{{ seller.sales_count }}</td>
+                        <td class="text-end">{{ seller.total_sold }} ₽</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-secondary text-white">
+            <h3 class="mb-0">Все транзакции</h3>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Товар</th>
+                            <th>Покупатель</th>
+                            <th>Продавец</th>
+                            <th class="text-end">Цена</th>
+                            <th class="text-end">Продавец (90%)</th>
+                            <th class="text-end">Комиссия (10%)</th>
+                            <th>Дата</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for purchase in purchases %}
+                        <tr>
+                            <td>{{ purchase.id }}</td>
+                            <td>{{ purchase.product_title }}</td>
+                            <td>{{ purchase.buyer.name }}</td>
+                            <td>{{ purchase.seller.name }}</td>
+                            <td class="text-end">{{ purchase.product_price }} ₽</td>
+                            <td class="text-end text-success">{{ purchase.seller_received }} ₽</td>
+                            <td class="text-end text-warning">{{ purchase.admin_received }} ₽</td>
+                            <td>{{ purchase.purchase_date.strftime('%d.%m.%Y %H:%M') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
