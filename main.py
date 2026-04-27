@@ -53,7 +53,7 @@ def main():
         create_admin_user()
     db_sess.close()
 
-    app.run(port=5000, host='0.0.0.0')
+    app.run(host='0.0.0.0', port=5000, debug=True)
 
 
 @app.route("/")
