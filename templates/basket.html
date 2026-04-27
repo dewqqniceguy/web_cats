@@ -6,41 +6,43 @@
         <h1>Корзина</h1>
         {% if basket %}
             {% for item in basket_items %}
-                <div class="col-md-12 border rounded mb-2">
-                    <h2>{{ item.product.title }}</h2>
-                    {% if item.image_path %}
-            <img src="{{ url_for('static', filename=item.image_path) }}" alt="{{ item.title }}" width="200">
-        {% endif %}
-                    <div>
-                        {{ item.product.price }}₽
+                <div class="col-md-12 border rounded mb-2 p-3">
+                    <div class="row">
+                        <div class="col-md-4">
+                            {% if item.product.image_data %}
+                                <img src="data:image/jpeg;base64,{{ item.product.image_data }}" alt="{{ item.product.title }}" style="max-height: 150px; max-width: 100%;">
+                            {% else %}
+                                <div class="bg-secondary d-flex align-items-center justify-content-center" style="height: 150px;">
+                                    <span class="text-white">Нет фото</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-8">
+                            <h2>{{ item.product.title }}</h2>
+                            <p>{{ item.product.content[:100] }}...</p>
+                            <p><strong>Цена:</strong> {{ item.product.price }} ₽</p>
+                            <p><strong>Количество:</strong> {{ item.quantity }}</p>
+                        </div>
                     </div>
-                    <div>
-                        Количество: {{ item.quantity }}
-                    </div>
-                    <div>
-        <a href="/quantity/{{ item.id }}" class="btn btn-primary">
-            Изменить количество
-        </a>
-    </div>
                 </div>
             {% endfor %}
         {% else %}
             <p>Ваша корзина пуста.</p>
         {% endif %}
     </div>
+
     {% if basket %}
     <div class="col-md-4">
         <div class="border rounded p-3">
             <h3>Итого</h3>
-            <p>Общая стоимость: {{ t_price }}₽</p>
-            <p>Общее количество: {{ t_quantity }}</p>
-            <div>
-        <a href="/buy" class="btn btn-primary">
-            Приобрести
-        </a>
-    </div>
+            <p><strong>Общая стоимость:</strong> {{ t_price }} ₽</p>
+            <p><strong>Общее количество:</strong> {{ t_quantity }}</p>
+            <div class="d-grid gap-2">
+                <a href="/buy" class="btn btn-success btn-lg">Приобрести</a>
+                <a href="/" class="btn btn-secondary">Продолжить покупки</a>
+            </div>
         </div>
-    {% endif %}
     </div>
+    {% endif %}
 </div>
 {% endblock %}

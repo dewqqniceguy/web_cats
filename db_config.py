@@ -8,7 +8,7 @@ def create_admin_user():
     user = User()
     user.name = "Админ"
     user.email = "admin@cat.com"
-    user.hashed_password = generate_password_hash("12345")
+    user.hashed_password = generate_password_hash("123456")
     user.age = 52
     user.city = "Канаш"
     user.role = "a"

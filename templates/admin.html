@@ -1,23 +1,60 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Админ-панель</h1>
-<div class="mb-3">
-    <a href="/banned_list" class="btn btn-warning">Список заблокированных пользователей</a>
-</div>
-<div class="row">
-    {% for item in users %}
-        <div class="col-md-6 border rounded p-3 mb-2">
-            <h2>{{ item.name }}</h2>
-            <div>
-                <strong>ID:</strong> {{ item.id }} |
-                <strong>Email:</strong> {{ item.email }} |
-                <strong>Возраст:</strong> {{ item.age }}
+<div class="container">
+    <h1 class="mb-4">Админ-панель</h1>
+
+    <!-- Статистика комиссий -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card bg-warning text-dark border-0 shadow">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-1">Статистика комиссий</h3>
+                            <p class="mb-0">Всего получено комиссий (10% с каждой продажи):</p>
+                            <h2 class="mt-2">{{ total_admin_commission }} ₽</h2>
+                        </div>
+                        <a href="/admin_commission_stats" class="btn btn-dark btn-lg">Подробная статистика</a>
+                    </div>
+                </div>
             </div>
-            {% if current_user.role == "a" and item.id != current_user.id %}
-                <a href="/ban/{{ item.id }}" class="btn btn-danger mt-2">Забанить</a>
-            {% endif %}
         </div>
-    {% endfor %}
+    </div>
+
+    <!-- Кнопка списка забаненных -->
+    <div class="mb-4">
+        <a href="/banned_list" class="btn btn-outline-danger">
+            Список заблокированных пользователей
+        </a>
+    </div>
+
+    <!-- Список пользователей -->
+    <h2 class="mb-3">Пользователи</h2>
+    <div class="row">
+        {% for item in users %}
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h4 class="card-title">{{ item.name }}</h4>
+                        <hr>
+                        <div class="mb-2">
+                            <strong>ID:</strong> {{ item.id }}<br>
+                            <strong>Email:</strong> {{ item.email }}<br>
+                            <strong>Возраст:</strong> {{ item.age }} лет<br>
+                            <strong>Баланс:</strong> <span class="text-success">{{ item.balance }} ₽</span>
+                        </div>
+                    </div>
+                    {% if current_user.role == "a" and item.id != current_user.id %}
+                        <div class="card-footer bg-white border-top-0">
+                            <a href="/ban/{{ item.id }}" class="btn btn-danger btn-sm w-100">
+                                Забанить
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
 </div>
 {% endblock %}

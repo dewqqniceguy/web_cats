@@ -1,18 +1,38 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="col-md-6">
-    <h1>Пополнение баланса</h1>
-    <form action="" method="post" novalidate>
-        {{ form.hidden_tag() }}
-        <div class="form-group">
-            {{ form.balance.label }}
-            {{ form.balance(class="form-control", type="number") }}
-            {% for error in form.balance.errors %}
-                <div class="alert alert-danger mt-2">{{ error }}</div>
-            {% endfor %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white text-center">
+                    <h3 class="mb-0">Пополнение баланса</h3>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <h4>Текущий баланс:</h4>
+                        <h2 class="text-success">{{ current_user.balance }} ₽</h2>
+                    </div>
+
+                    <form action="" method="post" novalidate>
+                        {{ form.hidden_tag() }}
+
+                        <div class="form-group mb-3">
+                            {{ form.balance.label(class="form-label") }}
+                            {{ form.balance(class="form-control form-control-lg", type="number", min="1", placeholder="Введите сумму") }}
+                            {% for error in form.balance.errors %}
+                                <div class="alert alert-danger mt-2">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            {{ form.submit(class="btn btn-success btn-lg", value="ополнить") }}
+                            <a href="/" class="btn btn-outline-secondary">← Вернуться на главную</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-        <p>{{ form.submit(class="btn btn-primary") }}</p>
-    </form>
+    </div>
 </div>
 {% endblock %}

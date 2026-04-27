@@ -1,7 +1,10 @@
 import os
 
+
 from data.banned import BannedEmail
+from data.purchase import Purchase
 from db_config import create_admin_user
+
 
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.utils import secure_filename
@@ -23,6 +26,7 @@ from forms.quantity import QuantityForm
 from forms.user import RegisterForm
 import base64
 from forms.add_product import AddProductForm
+from sqlalchemy import func as db_func
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
@@ -146,6 +150,26 @@ def purchase(id):
     return redirect("/")
 
 
+@app.route("/admin_commission_stats")
+@login_required
+def admin_commission_stats():
+    if current_user.role != "a":
+        abort(404)
+
+    with db_session.create_session() as db_sess:
+        # Все покупки с комиссиями
+        purchases = db_sess.query(Purchase).order_by(Purchase.purchase_date.desc()).all()
+
+        # Сумма по каждому продавцу
+        seller_stats = db_sess.query(
+            User.name,
+            db_func.sum(Purchase.seller_received).label('total_sold'),
+            db_func.count(Purchase.id).label('sales_count')
+        ).join(Purchase, Purchase.seller_id == User.id).group_by(User.id).all()
+
+        return render_template("admin_commission_stats.html", purchases=purchases, seller_stats=seller_stats)
+
+
 @app.route("/banned_list")
 @login_required
 def banned_list():
@@ -218,15 +242,19 @@ def ban(item_id):
                                url="/", name_b="Вернуться на главную")
 
 
-@app.route("/admin", methods=['GET', 'POST'])
+@app.route("/admin")
 @login_required
 def admin():
     if current_user.role != "a":
         abort(404)
 
-    with db_session.create_session() as db_sess:  # ← добавить with
+    with db_session.create_session() as db_sess:
         users = db_sess.query(User).filter(User.id != 1).all()
-        return render_template("admin.html", users=users, url="/profile", name_b="Вернуться в профиль")
+
+        # Считаем общую сумму комиссий (admin_received со всех покупок)
+        total_commission = db_sess.query(db_func.sum(Purchase.admin_received)).scalar() or 0
+
+        return render_template("admin.html", users=users, total_admin_commission=int(total_commission))
 
 
 @app.route("/basket", methods=['GET', 'POST'])
@@ -274,33 +302,89 @@ def basket():
 @app.route("/buy", methods=['GET', 'POST'])
 @login_required
 def buy():
-    with db_session.create_session() as db_sess:  # ← добавить with
+    with db_session.create_session() as db_sess:
         basket = db_sess.query(Basket).filter(Basket.user == current_user).first()
         if not basket:
             return redirect("/")
 
         basket_items = db_sess.query(BasketItem).filter(BasketItem.basket_id == basket.id).all()
 
-        if basket_items:
-            for item in basket_items:
-                product = db_sess.query(Product).filter(Product.id == item.product_id).first()
-                if product:
-                    if product.price <= current_user.balance:
-                        seller = db_sess.query(User).filter(User.id == product.user_id).first()
-                        current_user.balance -= product.price
-                        seller.balance += product.price
-                        db_sess.delete(product)
-                        db_sess.commit()
-                    else:
-                        return redirect("/balance")
+        if not basket_items:
+            return redirect("/basket")
 
-            for item in basket_items:
-                db_sess.delete(item)
-            db_sess.delete(basket)
-            db_sess.commit()
+        # Находим админа
+        admin = db_sess.query(User).filter(User.role == 'a').first()
+        if not admin:
+            admin = db_sess.query(User).filter(User.id == 1).first()
 
+        total_price = 0
+        for item in basket_items:
+            total_price += item.product.price * item.quantity
+
+        # Проверяем баланс
+        if current_user.balance < total_price:
+            flash(f"Недостаточно средств! Нужно {total_price} ₽, у вас {current_user.balance} ₽", "danger")
+            return redirect("/balance")
+
+        # Получаем актуальные объекты пользователей из текущей сессии
+        buyer = db_sess.query(User).filter(User.id == current_user.id).first()
+
+        # Обрабатываем каждый товар в корзине
+        for item in basket_items:
+            product = item.product
+            seller = product.user
+
+            # Рассчитываем суммы
+            price = product.price
+            seller_gets = int(price * 0.9)
+            admin_gets = price - seller_gets
+
+            # Переводим деньги (обновляем объекты в сессии)
+            buyer.balance -= price
+            seller.balance += seller_gets
+            admin.balance += admin_gets
+
+            # Создаём запись в истории покупок
+            purchase = Purchase()
+            purchase.buyer_id = buyer.id
+            purchase.seller_id = seller.id
+            purchase.product_title = product.title
+            purchase.product_price = price
+            purchase.amount_paid = price
+            purchase.seller_received = seller_gets
+            purchase.admin_received = admin_gets
+            db_sess.add(purchase)
+
+            # Удаляем товар
+            db_sess.delete(product)
+
+        # Очищаем корзину
+        for item in basket_items:
+            db_sess.delete(item)
+        db_sess.delete(basket)
+
+        db_sess.commit()
+
+        # Обновляем current_user после коммита
+        db_sess.refresh(buyer)
+        current_user.balance = buyer.balance
+
+        flash(f"Покупка успешно совершена! Списано {total_price} ₽", "success")
         return redirect("/")
 
+
+@app.route("/purchase_history")
+@login_required
+def purchase_history():
+    with db_session.create_session() as db_sess:
+        # Покупки, где пользователь - покупатель
+        bought = db_sess.query(Purchase).filter(Purchase.buyer_id == current_user.id).order_by(
+            Purchase.purchase_date.desc()).all()
+        # Продажи, где пользователь - продавец
+        sold = db_sess.query(Purchase).filter(Purchase.seller_id == current_user.id).order_by(
+            Purchase.purchase_date.desc()).all()
+
+        return render_template("purchase_history.html", bought=bought, sold=sold)
 
 @app.route("/balance", methods=["GET", "POST"])
 @login_required

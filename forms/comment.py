@@ -1,15 +1,16 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, SelectField
-from wtforms.validators import DataRequired
-
+from wtforms import StringField, TextAreaField, SelectField, SubmitField
+from wtforms.validators import DataRequired, NumberRange
 
 class CommentForm(FlaskForm):
     rate = SelectField('Оценка', choices=[
-        (1, '1 звезда'),
-        (2, '2 звезды'),
-        (3, '3 звезды'),
-        (4, '4 звезды'),
-        (5, '5 звезд')
-    ], validators=[DataRequired()])
-    content = StringField('Отзыв', validators=[DataRequired()])
-    submit = SubmitField('Опубликовать')
+        ('1', '1 - Ужасно'),
+        ('2', '2 - Плохо'),
+        ('3', '3 - Нормально'),
+        ('4', '4 - Хорошо'),
+        ('5', '5 - Отлично')
+    ], validators=[DataRequired(message="Это поле обязательное")])
+    content = TextAreaField('Комментарий', validators=[
+        DataRequired(message="Это поле обязательное")
+    ])
+    submit = SubmitField('Оставить отзыв')

@@ -1,22 +1,41 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Заблокированные пользователи</h1>
-<div class="row">
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Заблокированные пользователи</h1>
+        <a href="/admin" class="btn btn-secondary">← Назад в админ-панель</a>
+    </div>
+
     {% if banned_emails %}
-        {% for banned in banned_emails %}
-            <div class="col-md-6 border rounded p-3 mb-2">
-                <h2>{{ banned.email }}</h2>
-                <div>
-                    <strong>ID:</strong> {{ banned.id }} |
-                    <strong>Причина бана:</strong> {{ banned.reason if banned.reason else "Не указана" }}
+        <div class="row">
+            {% for banned in banned_emails %}
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card border-danger shadow-sm">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0">Заблокирован</h5>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ banned.email }}</h5>
+                            <hr>
+                            <p><strong>ID:</strong> {{ banned.id }}</p>
+                            <p><strong>Причина бана:</strong>
+                                {{ banned.reason if banned.reason else "Не указана" }}
+                            </p>
+                        </div>
+                        <div class="card-footer bg-white border-top-0">
+                            <a href="/unban/{{ banned.id }}" class="btn btn-success btn-sm w-100">
+                                Разблокировать
+                            </a>
+                        </div>
+                    </div>
                 </div>
-                <a href="/unban/{{ banned.id }}" class="btn btn-success mt-2">Разблокировать</a>
-            </div>
-        {% endfor %}
+            {% endfor %}
+        </div>
     {% else %}
-        <p>Нет заблокированных пользователей</p>
+        <div class="alert alert-success text-center">
+            <h4 class="mb-0">Нет заблокированных пользователей</h4>
+        </div>
     {% endif %}
 </div>
-<a href="/admin" class="btn btn-secondary mt-3">Назад в админ-панель</a>
 {% endblock %}

@@ -21,9 +21,12 @@ class User(SqlAlchemyBase, UserMixin):
     balance = sqlalchemy.Column(sqlalchemy.Integer, nullable=True, default=0.00)
     product = orm.relationship("Product", back_populates='user')
     comments = orm.relationship("Comment", back_populates="user")
+    purchases_as_buyer = orm.relationship("Purchase", foreign_keys="Purchase.buyer_id", back_populates="buyer")
+    purchases_as_seller = orm.relationship("Purchase", foreign_keys="Purchase.seller_id", back_populates="seller")
 
     def set_password(self, password):
         self.hashed_password = generate_password_hash(password)
 
     def check_password(self, password):
         return check_password_hash(self.hashed_password, password)
+
